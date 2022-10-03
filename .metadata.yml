@@ -1,0 +1,13 @@
+metadata:
+  name: anchor
+  description: "High-Performance Erlang Memcached Client"
+  labels:
+    jira-project: DEGA
+    jira-board: 189
+  links:
+    - url: https://github.com/adgear/anchor/blob/master/README.md
+      title: Component Documentation Page
+spec:
+  owner: cg-dsp-bidding-systems
+  type:  tool
+  lifecycle: experimental
