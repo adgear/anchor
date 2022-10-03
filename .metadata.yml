@@ -9,5 +9,5 @@ metadata:
       title: Component Documentation Page
 spec:
   owner: cg-dsp-bidding-systems
-  type:  tool
+  type:  library
   lifecycle: experimental
