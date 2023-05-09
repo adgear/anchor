@@ -45,6 +45,16 @@ encode(ReqId, {get, Key}) ->
         opaque  = ReqId,
         key     = Key
     });
+encode(ReqId, {get_many, Keys}) ->
+    LEncoded = lists:map(
+        fun (Key) ->
+            {ok, Encoded} = encode(ReqId, {get, Key}),
+            Encoded
+        end,
+        Keys
+    ),
+    Bin = list_to_binary(LEncoded),
+    {ok, Bin};
 encode(ReqId, {increment, Key, Amount, InitialValue, TTL}) ->
     encode_request(#request {
         op_code = ?OP_INCREMENT,
@@ -96,7 +106,6 @@ decode(<<Header:?HEADER_LENGTH/binary, Rest/binary>>) ->
             <<Body:BodyLength/binary, Rest2/binary>> = Rest,
             <<Extras:ExtrasLength/binary, Key:KeyLength/binary,
                 Value/binary>> = Body,
-
             {ok, Rest2, #response {
                 op_code = OpCode,
                 key_length = KeyLength,

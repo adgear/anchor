@@ -171,6 +171,9 @@ async_decrement(Key, Amount, InitialValue, TTL, Pid) ->
 async_decrement(Key, Amount, InitialValue, TTL, Pid, Timeout) ->
     async_decrement(?APP, Key, Amount, InitialValue, TTL, Pid, Timeout).
 
+-spec async_decrement(pool_name(), binary(), integer(), integer(), non_neg_integer(),
+    pid(), timeout()) -> {ok, shackle:request_id()} | error().
+
 async_decrement(PoolName, Key, Amount, InitialValue, TTL, Pid, Timeout) ->
     cast(PoolName, {decrement, Key, Amount, InitialValue, TTL}, Pid, Timeout).
 
@@ -191,6 +194,9 @@ async_delete(Key, Pid) ->
 
 async_delete(Key, Pid, Timeout) ->
     async_delete(?APP, Key, Pid, Timeout).
+
+-spec async_delete(pool_name(), binary(), pid(), timeout()) ->
+    {ok, shackle:request_id()} | error().
 
 async_delete(PoolName, Key, Pid, Timeout) ->
     cast(PoolName, {delete, Key}, Pid, Timeout).
@@ -527,21 +533,31 @@ flush(TTL, Timeout) ->
 flush(PoolName, TTL, Timeout) ->
     call(PoolName, {flush, TTL}, Timeout).
 
--spec get(binary()) ->
-    {ok, binary()} | error().
+-spec get(binary() | [binary()]) ->
+    {ok, binary()} | error() | [{ok, binary()} | error()].
 
 get(Key) ->
     get(Key, ?DEFAULT_TIMEOUT).
 
--spec get(binary(), pos_integer()) ->
-    {ok, binary()} | error().
+-spec get(binary() | [binary()], pos_integer()) ->
+    {ok, binary()} | error() | [{ok, binary()} | error()].
 
 get(Key, Timeout) ->
     get(?APP, Key, Timeout).
 
--spec get(pool_name(), binary(), pos_integer()) ->
-    {ok, binary()} | error().
+-spec get(pool_name(), binary() | [binary()], pos_integer()) ->
+    {ok, binary()} | error() | [{ok, binary()} | error()].
 
+get(PoolName, Key, Timeout) when is_list(Key) ->
+    RVs = call(PoolName, lists:map(fun (X) -> {get, X} end, Key), Timeout),
+    KRVs = lists:zip(Key, RVs),
+    Fm = fun (X) ->
+        case X of {K, {ok, V}} -> {true, {K, V}};
+            _ -> false
+        end
+    end,
+    KVs = lists:filtermap(Fm, KRVs),
+    KVs;
 get(PoolName, Key, Timeout) ->
     call(PoolName, {get, Key}, Timeout).
 
@@ -650,6 +666,8 @@ replace(PoolName, Key, Value, TTL, Timeout) ->
 -spec response({ok, term()} | error()) ->
     ok | {ok, term()} | error().
 
+response({ok, Response}) when is_list(Response) ->
+    lists:map(fun ({_R, X}) -> anchor_response:format(X) end, Response);
 response({ok, Response}) ->
     anchor_response:format(Response);
 response({error, Reason}) ->

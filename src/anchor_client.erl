@@ -9,6 +9,7 @@
     init/1,
     setup/2,
     handle_request/2,
+    handle_request_many/2,
     handle_data/2,
     terminate/1
 ]).
@@ -33,13 +34,26 @@ init(_Opts) ->
 setup(_Socket, State) ->
     {ok, State}.
 
--spec handle_request(term(), state()) ->
-    {ok, pos_integer(), binary(), state()}.
+-spec handle_request_many([term()], state()) ->
+    {ok, [pos_integer()], binary(), state()}.
 
+handle_request_many(Xs, State) ->
+    F = fun(X, {S, Ids, Ds}) ->
+        {ok, Id, D, S2} = handle_request(X, S),
+        {S2, [Id|Ids], [D|Ds]}
+    end,
+    {S, Ids, Ds} = lists:foldl(F, {State, [], []}, Xs),
+    {ok, lists:reverse(Ids), list_to_binary(lists:reverse(Ds)), S}.
+
+-spec handle_request(term(), state()) ->
+    {ok, pos_integer() | [pos_integer()], binary(), state()}.
+
+handle_request(Request, State) when is_list(Request) ->
+    R = handle_request_many(Request, State),
+    R;
 handle_request(Request, #state {
         requests = Requests
     } = State) ->
-
     RequestId = request_id(Requests),
     {ok, Data} = anchor_protocol:encode(RequestId, Request),
 
@@ -68,14 +82,14 @@ terminate(_State) ->
 
 %% private
 decode_data(<<>>, Replies) ->
-    {ok, <<>>, Replies};
+    {ok, <<>>, lists:reverse(Replies)};
 decode_data(Data, Replies) ->
     case anchor_protocol:decode(Data) of
         {ok, Rest, Response2} ->
             Reply = {Response2#response.opaque, {ok, Response2}},
             decode_data(Rest, [Reply | Replies]);
         {error, not_enough_data} ->
-            {ok, Data, Replies}
+            {ok, Data, lists:reverse(Replies)}
     end.
 
 request_id(N) ->
