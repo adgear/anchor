@@ -171,7 +171,8 @@ async_decrement(Key, Amount, InitialValue, TTL, Pid) ->
 async_decrement(Key, Amount, InitialValue, TTL, Pid, Timeout) ->
     async_decrement(?APP, Key, Amount, InitialValue, TTL, Pid, Timeout).
 
--spec async_decrement(pool_name(), binary(), integer(), integer(), non_neg_integer(),
+-spec async_decrement(pool_name(), binary(), integer(),
+    integer(), non_neg_integer(),
     pid(), timeout()) -> {ok, shackle:request_id()} | error().
 
 async_decrement(PoolName, Key, Amount, InitialValue, TTL, Pid, Timeout) ->
@@ -534,19 +535,19 @@ flush(PoolName, TTL, Timeout) ->
     call(PoolName, {flush, TTL}, Timeout).
 
 -spec get(binary() | [binary()]) ->
-    {ok, binary()} | error() | [{ok, binary()} | error()].
+    {ok, binary()} | error() | [{binary(), binary()}].
 
 get(Key) ->
     get(Key, ?DEFAULT_TIMEOUT).
 
 -spec get(binary() | [binary()], pos_integer()) ->
-    {ok, binary()} | error() | [{ok, binary()} | error()].
+    {ok, binary()} | error() | [{binary(), binary()}].
 
 get(Key, Timeout) ->
     get(?APP, Key, Timeout).
 
 -spec get(pool_name(), binary() | [binary()], pos_integer()) ->
-    {ok, binary()} | error() | [{ok, binary()} | error()].
+    {ok, binary()} | error() | [{binary(), binary()}].
 
 get(PoolName, Key, Timeout) when is_list(Key) ->
     RVs = call(PoolName, lists:map(fun (X) -> {get, X} end, Key), Timeout),
@@ -664,7 +665,7 @@ replace(PoolName, Key, Value, TTL, Timeout) ->
     call(PoolName, {replace, Key, Value, TTL}, Timeout).
 
 -spec response({ok, term()} | error()) ->
-    ok | {ok, term()} | error().
+    ok | {ok, term()} | [{ok, term()}] | error().
 
 response({ok, Response}) when is_list(Response) ->
     lists:map(fun ({_R, X}) -> anchor_response:format(X) end, Response);
