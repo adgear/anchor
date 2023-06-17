@@ -63,7 +63,9 @@ server_presence_test(Sup, Pools) ->
     fun (X) -> mk_pool_spec(X, ?DEFAULT_POOL_SIZE) end,
     Pools)),
   lists:foreach(fun (X) ->
-      ?assert(lists:member(X, Running), atom_to_list(X) ++ " is not running")
+      ?assert(
+        lists:member(X, Running),
+        "'" ++ atom_to_list(X) ++ "' should run but is not running")
     end,
     Expecting).
 
