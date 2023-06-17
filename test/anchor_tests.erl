@@ -25,7 +25,14 @@ anchor_test_() ->
         fun noop_subtest/0,
         fun replace_subtest/0,
         fun set_get_subtest/0,
-        fun version_subtest/0
+        fun version_subtest/0,
+        fun adds_get_batch_subtest/0,
+        fun get_batch_novalue_subtest/0,
+        fun get_batch_novalue_value_subtest/0,
+        fun get_batch_value_novalue_subtest/0,
+        fun adds_get_batch_novalue_first_subtest/0,
+        fun adds_get_batch_novalue_last_subtest/0,
+        fun adds_get_batch_novalues_first_middle_last_subtest/0
     ]}.
 
 %% tests
@@ -133,6 +140,57 @@ set_get_subtest() ->
 version_subtest() ->
     {ok, _} = anchor:version().
 
+adds_get_batch_subtest() ->
+    KVs = add_key_value(10),
+    {Batch, _} = lists:unzip(KVs),
+    KVs = anchor:get(Batch).
+
+get_batch_novalue_subtest() ->
+    KeyNoValue = mk_key(),
+    [] = anchor:get([KeyNoValue]).
+
+get_batch_novalue_value_subtest() ->
+    KVs = add_key_value(1),
+    {Batch, _} = lists:unzip(KVs),
+    KeyNoValue = mk_key(),
+    KVs = anchor:get([KeyNoValue | Batch]).
+
+get_batch_value_novalue_subtest() ->
+    KVs = add_key_value(1),
+    {Batch, _} = lists:unzip(KVs),
+    KeyNoValue = mk_key(),
+    KVs = anchor:get(lists:append(Batch, [KeyNoValue])).
+
+adds_get_batch_novalue_first_subtest() ->
+    KVs = add_key_value(10),
+    {Batch, _} = lists:unzip(KVs),
+    KeyNoValue = mk_key(),
+    KVs = anchor:get([KeyNoValue | Batch]).
+
+adds_get_batch_novalue_last_subtest() ->
+    KVs = add_key_value(10),
+    {Batch, _} = lists:unzip(KVs),
+    KeyNoValue = mk_key(),
+    KVs = anchor:get(lists:append(Batch, [KeyNoValue])).
+
+adds_get_batch_novalues_first_middle_last_subtest() ->
+    KVs1 = add_key_value(3),
+    {Batch1, _} = lists:unzip(KVs1),
+    KVs2 = add_key_value(4),
+    {Batch2, _} = lists:unzip(KVs2),
+    KVs3 = add_key_value(3),
+    {Batch3, _} = lists:unzip(KVs3),
+    KeyNoValue1 = mk_key(),
+    KeyNoValue2 = mk_key(),
+    KeyNoValue3 = mk_key(),
+    KeyNoValue4 = mk_key(),
+    Batch = lists:append([
+        [KeyNoValue1], Batch1,
+        [KeyNoValue2], Batch2,
+        [KeyNoValue3], Batch3, [KeyNoValue4]]),
+    Expect = lists:append([KVs1, KVs2, KVs3]),
+    Expect = anchor:get(Batch).
+
 %% utils
 cleanup() ->
     anchor_app:stop().
@@ -154,3 +212,18 @@ set_env([]) ->
 set_env([{K, V} | T]) ->
     application:set_env(?APP, K, V),
     set_env(T).
+
+mk_key() ->
+    random().
+
+mk_value() ->
+    random().
+
+mk_key_value() ->
+    {mk_key(), mk_value()}.
+
+add_key_value(N) ->
+    KVs = [mk_key_value() || _ <- lists:seq(1, N)],
+    Oks = lists:duplicate(N, ok),
+    Oks = [anchor:add(K, V) || {K, V} <- KVs],
+    KVs.
