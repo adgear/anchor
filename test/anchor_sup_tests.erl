@@ -15,8 +15,7 @@ anchor_sup_creates_all_pools_test_() ->
              shackle_pool:stop(bar),
              ok
      end,
-     [?_assertEqual(2 * ?DEFAULT_POOL_SIZE,
-                           length(supervisor:which_children(shackle_sup)))]}.
+     [fun () -> server_presence_test(shackle_sup, [foo, bar]) end]}.
 
 anchor_uses_config_from_env_test_() ->
     {setup,
@@ -55,3 +54,28 @@ anchor_uses_config_from_env_test_() ->
                                   start,
                                   StartArgs))
       end]}.
+
+%% tests
+server_presence_test(Sup, Pools) ->
+  Running = lists:map(fun (X) -> element(1, X) end,
+    supervisor:which_children(Sup)),
+  Expecting = lists:flatten(lists:map(
+    fun (X) -> mk_pool_spec(X, ?DEFAULT_POOL_SIZE) end,
+    Pools)),
+  lists:foreach(fun (X) ->
+      ?assert(lists:member(X, Running), atom_to_list(X) ++ " is not running")
+    end,
+    Expecting).
+
+%% utils
+server_name(Name, Index) ->
+%% from shackle_pool:server_name
+  list_to_atom(atom_to_list(Name) ++ "_" ++ integer_to_list(Index)).
+
+server_monitor_name(Name) ->
+%% from shackle_pool:server_monitor_name
+  list_to_atom(atom_to_list(Name) ++ "_server_monitor").
+
+mk_pool_spec(Name, Size) ->
+  [server_monitor_name(Name) |
+    [server_name(Name, I) || I <- lists:seq(1, Size)]].
