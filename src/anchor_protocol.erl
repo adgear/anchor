@@ -51,16 +51,6 @@ encode(ReqId, {getq, Key}) ->
         opaque  = ReqId,
         key     = Key
     });
-encode(ReqId, {get_many, Keys}) ->
-    LEncoded = lists:map(
-        fun (Key) ->
-            {ok, Encoded} = encode(ReqId, {get, Key}),
-            Encoded
-        end,
-        Keys
-    ),
-    Bin = list_to_binary(LEncoded),
-    {ok, Bin};
 encode(ReqId, {increment, Key, Amount, InitialValue, TTL}) ->
     encode_request(#request {
         op_code = ?OP_INCREMENT,
