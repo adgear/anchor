@@ -41,6 +41,7 @@
 -define(OP_DELETE, 16#04).
 -define(OP_FLUSH, 16#08).
 -define(OP_GET, 16#00).
+-define(OP_GETQ, 16#09).
 -define(OP_INCREMENT, 16#05).
 -define(OP_NOOP, 16#0a).
 -define(OP_QUIT, 16#07).

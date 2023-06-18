@@ -24,6 +24,8 @@ return(#response {op_code = ?OP_DELETE}) -> ok;
 return(#response {op_code = ?OP_FLUSH}) -> ok;
 return(#response {op_code = ?OP_GET, value = Value}) ->
     {ok, Value};
+return(#response {op_code = ?OP_GETQ, value = Value}) ->
+    {ok, Value};
 return(#response {op_code = ?OP_INCREMENT, value = Value}) ->
     {ok, binary:decode_unsigned(Value)};
 return(#response {op_code = ?OP_NOOP}) -> ok;

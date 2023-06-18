@@ -26,6 +26,8 @@ anchor_test_() ->
         fun replace_subtest/0,
         fun set_get_subtest/0,
         fun version_subtest/0,
+        fun add_getq_key_subtest/0,
+        fun add_getq_nokey_subtest/0,
         fun adds_get_batch_subtest/0,
         fun get_batch_novalue_subtest/0,
         fun get_batch_novalue_value_subtest/0,
@@ -139,6 +141,17 @@ set_get_subtest() ->
 
 version_subtest() ->
     {ok, _} = anchor:version().
+
+add_getq_key_subtest() ->
+    {K, V} = mk_key_value(),
+    ok = anchor:add(K, V),
+    {ok, V} = anchor:get(K),
+    {ok, V} = anchor:getq(K).
+
+add_getq_nokey_subtest() ->
+    K = mk_key(),
+    {error,key_not_found} = anchor:get(K),
+    {error,timeout} = anchor:getq(K).
 
 adds_get_batch_subtest() ->
     KVs = add_key_value(10),

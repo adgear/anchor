@@ -76,6 +76,9 @@
     get/1,
     get/2,
     get/3,
+    getq/1,
+    getq/2,
+    getq/3,
     increment/1,
     increment/2,
     increment/3,
@@ -561,6 +564,24 @@ get(PoolName, Key, Timeout) when is_list(Key) ->
     KVs;
 get(PoolName, Key, Timeout) ->
     call(PoolName, {get, Key}, Timeout).
+
+-spec getq(binary()) ->
+    {ok, binary()} | error().
+
+getq(Key) ->
+    getq(Key, ?DEFAULT_TIMEOUT).
+
+-spec getq(binary(), pos_integer()) ->
+    {ok, binary()} | error().
+
+getq(Key, Timeout) ->
+    getq(?APP, Key, Timeout).
+
+-spec getq(pool_name(), binary(), pos_integer()) ->
+    {ok, binary()} | error().
+
+getq(PoolName, Key, Timeout) ->
+    call(PoolName, {getq, Key}, Timeout).
 
 -spec increment(binary()) ->
     {ok, integer()} | error().

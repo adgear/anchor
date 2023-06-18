@@ -45,6 +45,12 @@ encode(ReqId, {get, Key}) ->
         opaque  = ReqId,
         key     = Key
     });
+encode(ReqId, {getq, Key}) ->
+    encode_request(#request {
+        op_code = ?OP_GETQ,
+        opaque  = ReqId,
+        key     = Key
+    });
 encode(ReqId, {get_many, Keys}) ->
     LEncoded = lists:map(
         fun (Key) ->
