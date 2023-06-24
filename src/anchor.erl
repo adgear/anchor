@@ -27,6 +27,10 @@
     async_get/2,
     async_get/3,
     async_get/4,
+    async_get_batch/1,
+    async_get_batch/2,
+    async_get_batch/3,
+    async_get_batch/4,
     async_increment/1,
     async_increment/2,
     async_increment/3,
@@ -76,6 +80,9 @@
     get/1,
     get/2,
     get/3,
+    get_batch/1,
+    get_batch/2,
+    get_batch/3,
     getq/1,
     getq/2,
     getq/3,
@@ -91,6 +98,7 @@
     quit/0,
     quit/1,
     quit/2,
+    receive_batch_response/1,
     receive_response/1,
     replace/2,
     replace/3,
@@ -258,6 +266,30 @@ async_get(Key, Pid, Timeout) ->
 
 async_get(PoolName, Key, Pid, Timeout) ->
     cast(PoolName, {get, Key}, Pid, Timeout).
+
+-spec async_get_batch([binary()]) ->
+    {ok, shackle:batch_state()} | error().
+
+async_get_batch(Keys) ->
+    async_get_batch(Keys, ?DEFAULT_PID).
+
+-spec async_get_batch([binary()], pid()) ->
+    {ok, shackle:batch_state()} | error().
+
+async_get_batch(Keys, Pid) ->
+    async_get_batch(Keys, Pid, ?DEFAULT_TIMEOUT).
+
+-spec async_get_batch([binary()], pid(), timeout()) ->
+    {ok, shackle:batch_state()} | error().
+
+async_get_batch(Keys, Pid, Timeout) ->
+    async_get_batch(?APP, Keys, Pid, Timeout).
+
+-spec async_get_batch(pool_name(), [binary()], pid(), timeout()) ->
+    {ok, shackle:batch_state()} | error().
+
+async_get_batch(PoolName, Keys, Pid, Timeout) ->
+    shackle:batch_cast(PoolName, mk_get_nogetq_batch(Keys), Pid, Timeout).
 
 -spec async_increment(binary()) ->
     {ok, shackle:request_id()} | error().
@@ -537,33 +569,53 @@ flush(TTL, Timeout) ->
 flush(PoolName, TTL, Timeout) ->
     call(PoolName, {flush, TTL}, Timeout).
 
--spec get(binary() | [binary()]) ->
-    {ok, binary()} | error() | [{binary(), binary()}].
+-spec get(binary()) ->
+    {ok, binary()} | error().
 
 get(Key) ->
     get(Key, ?DEFAULT_TIMEOUT).
 
--spec get(binary() | [binary()], pos_integer()) ->
-    {ok, binary()} | error() | [{binary(), binary()}].
+-spec get(binary(), pos_integer()) ->
+    {ok, binary()} | error().
 
 get(Key, Timeout) ->
     get(?APP, Key, Timeout).
 
--spec get(pool_name(), binary() | [binary()], pos_integer()) ->
-    {ok, binary()} | error() | [{binary(), binary()}].
+-spec get(pool_name(), binary(), pos_integer()) ->
+    {ok, binary()} | error().
 
-get(PoolName, Key, Timeout) when is_list(Key) ->
-    RVs = call(PoolName, lists:map(fun (X) -> {get, X} end, Key), Timeout),
-    KRVs = lists:zip(Key, RVs),
-    Fm = fun (X) ->
-        case X of {K, {ok, V}} -> {true, {K, V}};
-            _ -> false
-        end
-    end,
-    KVs = lists:filtermap(Fm, KRVs),
-    KVs;
 get(PoolName, Key, Timeout) ->
     call(PoolName, {get, Key}, Timeout).
+
+-spec get_batch([binary()]) ->
+    [{binary(), binary()}] | error().
+
+get_batch(Keys) ->
+    get_batch(Keys, ?DEFAULT_TIMEOUT).
+
+-spec get_batch([binary()], pos_integer()) ->
+    [{binary(), binary()}] | error().
+
+get_batch(Keys, Timeout) ->
+    get_batch(?APP, Keys, Timeout).
+
+-spec get_batch(pool_name(), [binary()], pos_integer()) ->
+    [{binary(), binary()}] | error().
+
+get_batch(PoolName, Keys, Timeout) ->
+    Batch = mk_get_batch(Keys),
+    case batch_call(PoolName, Batch, Timeout) of
+        {error, Reason} ->
+            {error, Reason};
+        RVs ->
+            KRVs = lists:zip(Keys, RVs),
+            Fm = fun (X) ->
+                case X of {K, {ok, V}} -> {true, {K, V}};
+                    _ -> false
+                end end,
+            KVs = lists:filtermap(Fm, KRVs),
+            KVs
+    end.
 
 -spec getq(binary()) ->
     {ok, binary()} | error().
@@ -655,6 +707,12 @@ quit(Timeout) ->
 quit(PoolName, Timeout) ->
     call(PoolName, quit, Timeout).
 
+-spec receive_batch_response(shackle:batch_state()) ->
+    {ok, term()} | {error, term()}.
+
+receive_batch_response(BatchState) ->
+    batch_response(shackle:receive_batch_response(BatchState)).
+
 -spec receive_response(shackle:request_id()) ->
     {ok, term()} | {error, term()}.
 
@@ -685,11 +743,14 @@ replace(Key, Value, TTL, Timeout) ->
 replace(PoolName, Key, Value, TTL, Timeout) ->
     call(PoolName, {replace, Key, Value, TTL}, Timeout).
 
+batch_response({error, Reason}) ->
+    {error, Reason};
+batch_response(Responses) ->
+    lists:map(fun ({_R, X}) -> anchor_response:format(X) end, Responses).
+
 -spec response({ok, term()} | error()) ->
     ok | {ok, term()} | [{ok, term()}] | error().
 
-response({ok, Response}) when is_list(Response) ->
-    lists:map(fun ({_R, X}) -> anchor_response:format(X) end, Response);
 response({ok, Response}) ->
     anchor_response:format(Response);
 response({error, Reason}) ->
@@ -738,8 +799,31 @@ version(PoolName, Timeout) ->
     call(PoolName, version, Timeout).
 
 %% private
+batch_call(PoolName, Msgs, Timeout) ->
+    batch_response(shackle:batch_call(PoolName, Msgs, Timeout)).
+
 call(PoolName, Msg, Timeout) ->
     response(shackle:call(PoolName, Msg, Timeout)).
 
 cast(PoolName, Msg, Pid, Timeout) ->
     shackle:cast(PoolName, Msg, Pid, Timeout).
+
+%% utils
+map_maplast(F, FLast, L) ->
+    map_maplast(F, FLast, L, []).
+
+map_maplast(_F, _FLast, [], Acc) ->
+    lists:reverse(Acc);
+map_maplast(F, FLast, [H|[]=T], Acc) ->
+    map_maplast(F, FLast, T, [FLast(H)|Acc]);
+map_maplast(F, FLast, [H|T], Acc) ->
+    map_maplast(F, FLast, T, [F(H)|Acc]).
+
+mk_get_batch(Keys) ->
+    map_maplast(
+        fun (X) -> {getq, X} end,
+        fun (X) -> {get, X} end,
+        Keys).
+
+mk_get_nogetq_batch(Keys) ->
+    lists:map(fun (X) -> {get, X} end, Keys).

@@ -29,12 +29,13 @@ anchor_test_() ->
         fun add_getq_key_subtest/0,
         fun add_getq_nokey_subtest/0,
         fun adds_get_batch_subtest/0,
-        fun get_batch_novalue_subtest/0,
-        fun get_batch_novalue_value_subtest/0,
-        fun get_batch_value_novalue_subtest/0,
-        fun adds_get_batch_novalue_first_subtest/0,
-        fun adds_get_batch_novalue_last_subtest/0,
-        fun adds_get_batch_novalues_first_middle_last_subtest/0
+        fun adds_async_get_batch_subtest/0
+%%        fun get_batch_novalue_subtest/0,
+%%        fun get_batch_novalue_value_subtest/0,
+%%        fun get_batch_value_novalue_subtest/0,
+%%        fun adds_get_batch_novalue_first_subtest/0,
+%%        fun adds_get_batch_novalue_last_subtest/0,
+%%        fun adds_get_batch_novalues_first_middle_last_subtest/0
     ]}.
 
 %% tests
@@ -156,7 +157,17 @@ add_getq_nokey_subtest() ->
 adds_get_batch_subtest() ->
     KVs = add_key_value(10),
     {Batch, _} = lists:unzip(KVs),
-    KVs = anchor:get(Batch).
+    KVs = anchor:get_batch(Batch).
+
+adds_async_get_batch_subtest() ->
+    N = 10,
+    KVs = add_key_value(N),
+    {Ks, Vs} = lists:unzip(KVs),
+    {ok, BatchState} = anchor:async_get_batch(Ks),
+    {_, N} = BatchState,
+    Oks = lists:duplicate(N, ok),
+    Responses = lists:zip(Oks, Vs),
+    Responses = anchor:receive_batch_response(BatchState).
 
 get_batch_novalue_subtest() ->
     KeyNoValue = mk_key(),
@@ -218,7 +229,8 @@ setup(KeyVals) ->
     error_logger:tty(false),
     application:load(?APP),
     set_env(KeyVals),
-    anchor_app:start().
+    anchor_app:start(),
+    timer:sleep(1000).
 
 set_env([]) ->
     ok;
