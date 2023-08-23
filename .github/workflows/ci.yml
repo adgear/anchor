@@ -1,0 +1,29 @@
+name: Erlang Tests CI
+on: push
+
+jobs:
+  Run:
+    strategy:
+      matrix:
+        erlang: ['24']
+    runs-on: ubuntu-latest
+    container:
+      image: erlang:${{ matrix.erlang }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        env:
+          cache-name: rebar3
+        with:
+          path: |
+            _build
+            ~/.cache/rebar3
+          key: ci-${{runner.os}}-${{env.cache-name}}-erlang_${{matrix.erlang}}-rebar3-${{hashFiles('rebar.lock')}}
+      - name: elvis
+        run: make elvis
+      - name: xref
+        run: make xref
+      - name: dialyzer
+        run: make dialyzer
+      - name: eunit
+        run: make eunit
