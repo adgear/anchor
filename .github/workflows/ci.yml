@@ -15,13 +15,10 @@ jobs:
       matrix:
         erlang: ['26-slim']
 
-    services:
-      memcached:
-        image: adgear-docker.jfrog.io/adgear/actions-delivery-memcached:1.6.21-bookworm
-        ports:
-          - '11211:11211'
-
     steps:
+      - name: Memcached
+        uses: niden/actions-memcached@v7
+        
       - name: Clone project
         uses: actions/checkout@v4
 
