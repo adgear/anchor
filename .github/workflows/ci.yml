@@ -15,10 +15,13 @@ jobs:
       matrix:
         erlang: ['26-slim']
 
+    services:
+      memcached:
+        image: ubuntu/memcached
+        ports:
+          - '11211:11211'
+
     steps:
-      - name: Memcached
-        uses: niden/actions-memcached@v7
-        
       - name: Clone project
         uses: actions/checkout@v4
 
