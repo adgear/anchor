@@ -145,7 +145,8 @@ setup(KeyVals) ->
     error_logger:tty(false),
     application:load(?APP),
     set_env(KeyVals),
-    anchor_app:start().
+    anchor_app:start(),
+    timer:sleep(10).
 
 set_env([]) ->
     ok;

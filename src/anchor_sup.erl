@@ -40,8 +40,8 @@ init([]) ->
     ok = shackle_pool:start(
         ?APP,
         ?CLIENT,
-        PoolConfig,
-        ClientConfig
+        ClientConfig,
+        PoolConfig
     ),
 
     {ok, {{one_for_one, 5, 10}, []}}.
