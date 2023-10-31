@@ -31,43 +31,15 @@ jobs:
       - name: Clone project
         uses: actions/checkout@v4
 
-      - name: Get GitHub token
-        id: get_token
-        uses: getsentry/action-github-app-token@v2
-        with:
-          private_key: ${{ secrets.PRIVATE_REPO_APP_PEM_RAW }}
-          app_id: ${{ secrets.PRIVATE_REPO_APP_ID }}
-
-      - name: Install CI dependencies
-        run: |
-          apt-get update -qq
-          apt-get install --no-install-recommends -y \
-            openssh-client \
-            ca-certificates \
-            git \
-            curl \
-            make \
-            automake \
-            build-essential \
-            g++ \
-            libnl-3-dev \
-            libnl-genl-3-dev \
-            autotools-dev \
-            libtool \
-            libidn11-dev \
-            linux-libc-dev \
-            gettext \
-            libz-dev
-
-      - name: Setup private repo access
-        run: |
-          git config --global url."https://oauth2:${GITHUB_TOKEN}@github.com/adgear".insteadOf "https://github.com/adgear"
-          git config --global --add url."https://oauth2:${GITHUB_TOKEN}@github.com/".insteadOf "ssh://git@github.com:"
-          git config --global --add url."https://oauth2:${GITHUB_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
-          git config --global --add url."https://oauth2:${GITHUB_TOKEN}@github.com/".insteadOf "git@github.com:"
-          git config --global --add url."https://oauth2:${GITHUB_TOKEN}@github.com/".insteadOf "git@github.com/"
+      - name: Cache
+        uses: actions/cache@v3
         env:
-          GITHUB_TOKEN: ${{ steps.get_token.outputs.token }}
+          cache-name: rebar3
+        with:
+          path: |
+            _build
+            ~/.cache/rebar3
+          key: ci-${{runner.os}}-${{env.cache-name}}-erlang_${{matrix.erlang}}-rebar3-${{hashFiles('rebar.lock')}}
 
       - name: Fetch dependencies
         run: rebar3 get-deps
