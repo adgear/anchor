@@ -1,0 +1,76 @@
+name: Erlang CI
+
+on: push
+
+concurrency:
+  group: erlang-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        erlang: ['26-slim']
+
+    services:
+      memcached:
+        image: ubuntu/memcached
+        ports:
+          - '11211:11211'
+
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v4
+
+      - name: Cache
+        uses: actions/cache@v3
+        env:
+          cache-name: rebar3
+        with:
+          path: |
+            _build
+            ~/.cache/rebar3
+          key: ci-${{runner.os}}-${{env.cache-name}}-erlang_${{matrix.erlang}}-rebar3-${{hashFiles('rebar.lock')}}
+
+      - name: Install CI dependencies
+        run: |
+          apt-get update -qq
+          apt-get install --no-install-recommends -y \
+            openssh-client \
+            ca-certificates \
+            git \
+            curl \
+            make \
+            automake \
+            build-essential \
+            g++ \
+            libnl-3-dev \
+            libnl-genl-3-dev \
+            autotools-dev \
+            libtool \
+            libidn11-dev \
+            linux-libc-dev \
+            gettext \
+            libz-dev \
+            libgpm2
+
+      - name: Fetch dependencies
+        run: make deps
+
+      - name: Format checks
+        run: make fmt-check
+
+      - name: Build
+        run: make compile
+
+      - name: Eunit checks
+        run: make eunit
+
+      - name: xref checks
+        run: make xref
+
+      - name: Dialyzer checks
+        run: make dialyzer

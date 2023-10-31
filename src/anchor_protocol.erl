@@ -1,4 +1,5 @@
 -module(anchor_protocol).
+
 -include("anchor.hrl").
 
 -compile(inline).
@@ -11,93 +12,89 @@
 
 %% public
 -spec encode(pos_integer(), atom() | tuple()) -> {ok, binary()}.
-
 encode(ReqId, {add, Key, Value, TTL}) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_ADD,
-        opaque  = ReqId,
-        extras  = <<16#deadbeef:32, TTL:32>>,
-        key     = Key,
-        value   = Value
+        opaque = ReqId,
+        extras = <<16#deadbeef:32, TTL:32>>,
+        key = Key,
+        value = Value
     });
 encode(ReqId, {decrement, Key, Amount, InitialValue, TTL}) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_DECREMENT,
-        opaque  = ReqId,
-        key     = Key,
-        extras  = <<Amount:64, InitialValue:64, TTL:32>>
+        opaque = ReqId,
+        key = Key,
+        extras = <<Amount:64, InitialValue:64, TTL:32>>
     });
 encode(ReqId, {delete, Key}) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_DELETE,
-        opaque  = ReqId,
-        key     = Key
+        opaque = ReqId,
+        key = Key
     });
 encode(ReqId, {flush, TTL}) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_FLUSH,
-        opaque  = ReqId,
-        extras  = <<TTL:32>>
+        opaque = ReqId,
+        extras = <<TTL:32>>
     });
 encode(ReqId, {get, Key}) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_GET,
-        opaque  = ReqId,
-        key     = Key
+        opaque = ReqId,
+        key = Key
     });
 encode(ReqId, {increment, Key, Amount, InitialValue, TTL}) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_INCREMENT,
-        opaque  = ReqId,
-        key     = Key,
-        extras  = <<Amount:64, InitialValue:64, TTL:32>>
+        opaque = ReqId,
+        key = Key,
+        extras = <<Amount:64, InitialValue:64, TTL:32>>
     });
 encode(ReqId, noop) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_NOOP,
-        opaque  = ReqId
+        opaque = ReqId
     });
 encode(ReqId, quit) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_QUIT,
-        opaque  = ReqId
+        opaque = ReqId
     });
 encode(ReqId, {replace, Key, Value, TTL}) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_REPLACE,
-        opaque  = ReqId,
-        extras  = <<16#deadbeef:32, TTL:32>>,
-        key     = Key,
-        value   = Value
+        opaque = ReqId,
+        extras = <<16#deadbeef:32, TTL:32>>,
+        key = Key,
+        value = Value
     });
 encode(ReqId, {set, Key, Value, TTL}) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_SET,
-        opaque  = ReqId,
-        extras  = <<16#deadbeef:32, TTL:32>>,
-        key     = Key,
-        value   = Value
+        opaque = ReqId,
+        extras = <<16#deadbeef:32, TTL:32>>,
+        key = Key,
+        value = Value
     });
 encode(ReqId, version) ->
-    encode_request(#request {
+    encode_request(#request{
         op_code = ?OP_VERSION,
-        opaque  = ReqId
+        opaque = ReqId
     }).
 
--spec decode(binary()) ->
-    {ok, binary(), response()} | {error, not_enough_data}.
-
+-spec decode(binary()) -> {ok, binary(), response()} | {error, not_enough_data}.
 decode(<<Header:?HEADER_LENGTH/binary, Rest/binary>>) ->
-    <<?MAGIC_RESPONSE:8, OpCode:8, KeyLength:16, ExtrasLength:8,
-        DataType:8, Status:16, BodyLength:32, ReqId:32, CAS:64>> = Header,
+    <<?MAGIC_RESPONSE:8, OpCode:8, KeyLength:16, ExtrasLength:8, DataType:8, Status:16,
+        BodyLength:32, ReqId:32, CAS:64>> = Header,
 
     case size(Rest) >= BodyLength of
         true ->
             <<Body:BodyLength/binary, Rest2/binary>> = Rest,
-            <<Extras:ExtrasLength/binary, Key:KeyLength/binary,
-                Value/binary>> = Body,
+            <<Extras:ExtrasLength/binary, Key:KeyLength/binary, Value/binary>> = Body,
 
-            {ok, Rest2, #response {
+            {ok, Rest2, #response{
                 op_code = OpCode,
                 key_length = KeyLength,
                 extras_length = ExtrasLength,
@@ -117,21 +114,21 @@ decode(_Data) ->
     {error, not_enough_data}.
 
 %% private
-encode_request(#request {
-        op_code = OpCode,
-        data_type = DataType,
-        vbucket = VBucket,
-        opaque = Opaque,
-        cas = CAS,
-        extras = Extras,
-        key = Key,
-        value = Value
-    })->
-
+encode_request(#request{
+    op_code = OpCode,
+    data_type = DataType,
+    vbucket = VBucket,
+    opaque = Opaque,
+    cas = CAS,
+    extras = Extras,
+    key = Key,
+    value = Value
+}) ->
     KeyLength = size(Key),
     ExtrasLength = size(Extras),
     Body = <<Extras/binary, Key/binary, Value/binary>>,
     BodyLength = size(Body),
 
-    {ok, <<?MAGIC_REQUEST:8, OpCode:8, KeyLength:16, ExtrasLength:8, DataType:8,
-        VBucket:16, BodyLength:32, Opaque:32, CAS:64, Body/binary>>}.
+    {ok,
+        <<?MAGIC_REQUEST:8, OpCode:8, KeyLength:16, ExtrasLength:8, DataType:8, VBucket:16,
+            BodyLength:32, Opaque:32, CAS:64, Body/binary>>}.

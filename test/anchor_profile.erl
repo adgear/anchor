@@ -9,11 +9,12 @@
 
 %% public
 -spec fprofx() -> ok.
-
 fprofx() ->
     Filenames = filelib:wildcard("_build/default/lib/*/ebin/*.beam"),
-    Rootnames = [filename:rootname(Filename, ".beam") ||
-        Filename <- Filenames],
+    Rootnames = [
+        filename:rootname(Filename, ".beam")
+        || Filename <- Filenames
+    ],
     lists:foreach(fun code:load_abs/1, Rootnames),
 
     fprofx:start(),
@@ -24,10 +25,13 @@ fprofx() ->
     anchor:set(<<"key">>, <<"value">>),
 
     Self = self(),
-    [spawn(fun () ->
-        [anchor:get(<<"key">>) || _ <- lists:seq(1, ?N)],
-        Self ! exit
-    end) || _ <- lists:seq(1, ?P)],
+    [
+        spawn(fun() ->
+            [anchor:get(<<"key">>) || _ <- lists:seq(1, ?N)],
+            Self ! exit
+        end)
+        || _ <- lists:seq(1, ?P)
+    ],
     wait(),
 
     fprofx:trace(stop),

@@ -1,0 +1,7 @@
+version: '3'
+services:
+
+  memcached:
+    image: "memcached:latest"
+    ports:
+      - "127.0.0.1:11211:11211"

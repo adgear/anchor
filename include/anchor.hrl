@@ -6,6 +6,7 @@
 
 %% defaults
 -define(DEFAULT_BACKLOG_SIZE, 1024).
+-define(DEFAULT_BOUNCE_INTERVAL, infinity).
 -define(DEFAULT_INCREMENT, 1).
 -define(DEFAULT_INITIAL_VALUE, 0).
 -define(DEFAULT_IP, "127.0.0.1").
@@ -24,6 +25,7 @@
     {send_timeout, 50},
     {send_timeout_close, true}
 ]).
+
 -define(DEFAULT_TIMEOUT, 1000).
 -define(DEFAULT_TTL, 0).
 
@@ -66,35 +68,35 @@
 
 %% records
 -record(request, {
-    op_code   = undefined  :: non_neg_integer(),
+    op_code = undefined :: non_neg_integer(),
     data_type = ?DATA_TYPE :: non_neg_integer(),
-    vbucket   = ?VBUCKET   :: non_neg_integer(),
-    opaque    = <<>>       :: non_neg_integer(),
-    cas       = ?CAS       :: non_neg_integer(),
-    extras    = <<>>       :: binary(),
-    key       = <<>>       :: binary(),
-    value     = <<>>       :: binary()
+    vbucket = ?VBUCKET :: non_neg_integer(),
+    opaque = <<>> :: non_neg_integer(),
+    cas = ?CAS :: non_neg_integer(),
+    extras = <<>> :: binary(),
+    key = <<>> :: binary(),
+    value = <<>> :: binary()
 }).
 
 -record(response, {
-    op_code       :: non_neg_integer() | undefined,
-    key_length    :: non_neg_integer() | undefined,
+    op_code :: non_neg_integer() | undefined,
+    key_length :: non_neg_integer() | undefined,
     extras_length :: non_neg_integer() | undefined,
-    data_type     :: non_neg_integer() | undefined,
-    status        :: non_neg_integer() | undefined,
-    body_length   :: non_neg_integer() | undefined,
-    opaque        :: non_neg_integer() | undefined,
-    cas           :: non_neg_integer() | undefined,
-    extras        :: binary() | undefined,
-    key           :: binary() | undefined,
-    value         :: binary() | undefined
+    data_type :: non_neg_integer() | undefined,
+    status :: non_neg_integer() | undefined,
+    body_length :: non_neg_integer() | undefined,
+    opaque :: non_neg_integer() | undefined,
+    cas :: non_neg_integer() | undefined,
+    extras :: binary() | undefined,
+    key :: binary() | undefined,
+    value :: binary() | undefined
 }).
 
 %% types
--type error () :: {error, atom()}.
+-type error() :: {error, atom()}.
 -type option() :: {async, pid()}.
 -type options() :: [option()].
--type response() :: #response {}.
+-type response() :: #response{}.
 
 -export_type([
     error/0,

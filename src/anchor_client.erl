@@ -1,10 +1,12 @@
 -module(anchor_client).
+
 -include("anchor.hrl").
 
 -compile(inline).
 -compile({inline_size, 512}).
 
 -behavior(shackle_client).
+
 -export([
     init/1,
     setup/2,
@@ -14,55 +16,50 @@
 ]).
 
 -record(state, {
-    buffer   = <<>>      :: binary(),
-    requests = 0         :: non_neg_integer()
+    buffer = <<>> :: binary(),
+    requests = 0 :: non_neg_integer()
 }).
 
--type state() :: #state {}.
+-type state() :: #state{}.
 
 %% shackle_server callbacks
--spec init(undefined) ->
-    {ok, state()}.
-
+-spec init(undefined) -> {ok, state()}.
 init(_Opts) ->
-    {ok, #state {}}.
+    {ok, #state{}}.
 
--spec setup(inet:socket(), state()) ->
-    {ok, state()}.
-
+-spec setup(inet:socket(), state()) -> {ok, state()}.
 setup(_Socket, State) ->
     {ok, State}.
 
--spec handle_request(term(), state()) ->
-    {ok, pos_integer(), binary(), state()}.
-
-handle_request(Request, #state {
+-spec handle_request(term(), state()) -> {ok, pos_integer(), binary(), state()}.
+handle_request(
+    Request,
+    #state{
         requests = Requests
-    } = State) ->
-
+    } = State
+) ->
     RequestId = request_id(Requests),
     {ok, Data} = anchor_protocol:encode(RequestId, Request),
 
-    {ok, RequestId, Data, State#state {
+    {ok, RequestId, Data, State#state{
         requests = Requests + 1
     }}.
 
--spec handle_data(binary(), state()) ->
-    {ok, [{pos_integer(), term()}], state()}.
-
-handle_data(Data, #state {
+-spec handle_data(binary(), state()) -> {ok, [{pos_integer(), term()}], state()}.
+handle_data(
+    Data,
+    #state{
         buffer = Buffer
-    } = State) ->
-
+    } = State
+) ->
     Data2 = <<Buffer/binary, Data/binary>>,
     {ok, Buffer2, Replies} = decode_data(Data2, []),
 
-    {ok, Replies, State#state {
+    {ok, Replies, State#state{
         buffer = Buffer2
     }}.
 
 -spec terminate(state()) -> ok.
-
 terminate(_State) ->
     ok.
 

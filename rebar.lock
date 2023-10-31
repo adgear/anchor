@@ -1,14 +1,31 @@
-{"1.1.0",
-[{<<"foil">>,{pkg,<<"foil">>,<<"0.1.1">>},1},
- {<<"granderl">>,{pkg,<<"granderl">>,<<"0.1.5">>},1},
- {<<"metal">>,{pkg,<<"metal">>,<<"0.1.1">>},1},
+{"1.2.0",
+[{<<"erlsem">>,
+  {git,"https://github.com/x0id/erlsem.git",
+       {ref,"118506906cb41e9100392da4711bc9303451ec88"}},
+  1},
+ {<<"foil">>,
+  {git,"https://github.com/lpgauth/foil.git",
+       {ref,"e462829855a745d8f20fb0508ae3eb8e323b03bd"}},
+  1},
+ {<<"granderl">>,
+  {git,"https://github.com/adgear/granderl.git",
+       {ref,"a628b5f8ae696b1c4a8583b679661d2bf0d4affb"}},
+  0},
+ {<<"metal">>,
+  {git,"https://github.com/lpgauth/metal.git",
+       {ref,"43e28220b5affa45aa1e5fb0583fee26547968d3"}},
+  1},
+ {<<"prometheus">>,{pkg,<<"prometheus">>,<<"4.8.1">>},1},
+ {<<"quantile_estimator">>,{pkg,<<"quantile_estimator">>,<<"0.2.1">>},2},
  {<<"shackle">>,
-  {git,"https://github.com/lpgauth/shackle.git",
-       {ref,"1cf730d86b918df5d390dcfce7f33f49de8e2084"}},
+  {git,"ssh://git@github.com/adgear/erlang-shackle.git",
+       {ref,"3eb5aa5158888f5e1a6f9af9f1fa5bdd040dbbff"}},
   0}]}.
 [
 {pkg_hash,[
- {<<"foil">>, <<"4D07B62C114636BBC3EEBD5CEE04B23A7AAB1262B0F68AA79005A6FBC3790472">>},
- {<<"granderl">>, <<"F20077A68BD80B8D8783BD15A052813C6483771DEC1A5B837D307CBE92F14122">>},
- {<<"metal">>, <<"5D3D1322DA7BCD34B94FED5486F577973685298883954F7A3E517EF5EF6953F5">>}]}
+ {<<"prometheus">>, <<"FA76B152555273739C14B06F09F485CF6D5D301FE4E9D31B7FF803D26025D7A0">>},
+ {<<"quantile_estimator">>, <<"EF50A361F11B5F26B5F16D0696E46A9E4661756492C981F7B2229EF42FF1CD15">>}]},
+{pkg_hash_ext,[
+ {<<"prometheus">>, <<"6EDFBE928D271C7F657A6F2C46258738086584BD6CAE4A000B8B9A6009BA23A5">>},
+ {<<"quantile_estimator">>, <<"282A8A323CA2A845C9E6F787D166348F776C1D4A41EDE63046D72D422E3DA946">>}]}
 ].
