@@ -21,12 +21,6 @@ jobs:
         ports:
           - '11211:11211'
 
-    container:
-      image: adgear-docker.jfrog.io/erlang:${{ matrix.erlang }}
-      credentials:
-        username: ${{ secrets.ARTIFACTORY_GITHUB_ACTIONS_USERNAME }}
-        password: ${{ secrets.ARTIFACTORY_GITHUB_ACTIONS_PASSWORD }}
-
     steps:
       - name: Clone project
         uses: actions/checkout@v4
