@@ -9,7 +9,7 @@ concurrency:
 jobs:
   build:
     name: Build and tests
-    runs-on: [self-hosted, ubuntu-22.04-medium]
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
