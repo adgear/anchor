@@ -36,7 +36,7 @@ jobs:
           key: ci-${{runner.os}}-${{env.cache-name}}-erlang_${{matrix.erlang}}-rebar3-${{hashFiles('rebar.lock')}}
 
       - name: Fetch dependencies
-        run: rebar3 get-deps
+        run: make deps
 
       - name: Format checks
         run: make fmt-check

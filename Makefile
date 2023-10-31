@@ -59,4 +59,8 @@ xref:
 	@echo "Running rebar3 xref..."
 	@$(REBAR3) xref
 
+deps:
+	@echo "Running rebar3 get-deps..."
+	@$(REBAR3) get-deps
+
 .PHONY: clean compile coveralls dialyzer edoc elvis eunit profile xref fmt fmt-check
