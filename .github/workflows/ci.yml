@@ -35,6 +35,28 @@ jobs:
             ~/.cache/rebar3
           key: ci-${{runner.os}}-${{env.cache-name}}-erlang_${{matrix.erlang}}-rebar3-${{hashFiles('rebar.lock')}}
 
+      - name: Install CI dependencies
+        run: |
+          apt-get update -qq
+          apt-get install --no-install-recommends -y \
+            openssh-client \
+            ca-certificates \
+            git \
+            curl \
+            make \
+            automake \
+            build-essential \
+            g++ \
+            libnl-3-dev \
+            libnl-genl-3-dev \
+            autotools-dev \
+            libtool \
+            libidn11-dev \
+            linux-libc-dev \
+            gettext \
+            libz-dev \
+            libgpm2
+
       - name: Fetch dependencies
         run: make deps
 
