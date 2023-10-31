@@ -1,0 +1,88 @@
+name: Erlang CI
+
+on: push
+
+concurrency:
+  group: erlang-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and tests
+    runs-on: [self-hosted, ubuntu-22.04-medium]
+
+    strategy:
+      matrix:
+        erlang: ['26-slim']
+
+    services:
+      memcached:
+        image: adgear-docker.jfrog.io/adgear/actions-delivery-memcached:1.6.21-bookworm
+        ports:
+          - '11211:11211'
+
+    container:
+      image: adgear-docker.jfrog.io/erlang:${{ matrix.erlang }}
+      credentials:
+        username: ${{ secrets.ARTIFACTORY_GITHUB_ACTIONS_USERNAME }}
+        password: ${{ secrets.ARTIFACTORY_GITHUB_ACTIONS_PASSWORD }}
+
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v4
+
+      - name: Get GitHub token
+        id: get_token
+        uses: getsentry/action-github-app-token@v2
+        with:
+          private_key: ${{ secrets.PRIVATE_REPO_APP_PEM_RAW }}
+          app_id: ${{ secrets.PRIVATE_REPO_APP_ID }}
+
+      - name: Install CI dependencies
+        run: |
+          apt-get update -qq
+          apt-get install --no-install-recommends -y \
+            openssh-client \
+            ca-certificates \
+            git \
+            curl \
+            make \
+            automake \
+            build-essential \
+            g++ \
+            libnl-3-dev \
+            libnl-genl-3-dev \
+            autotools-dev \
+            libtool \
+            libidn11-dev \
+            linux-libc-dev \
+            gettext \
+            libz-dev
+
+      - name: Setup private repo access
+        run: |
+          git config --global url."https://oauth2:${GITHUB_TOKEN}@github.com/adgear".insteadOf "https://github.com/adgear"
+          git config --global --add url."https://oauth2:${GITHUB_TOKEN}@github.com/".insteadOf "ssh://git@github.com:"
+          git config --global --add url."https://oauth2:${GITHUB_TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://oauth2:${GITHUB_TOKEN}@github.com/".insteadOf "git@github.com:"
+          git config --global --add url."https://oauth2:${GITHUB_TOKEN}@github.com/".insteadOf "git@github.com/"
+        env:
+          GITHUB_TOKEN: ${{ steps.get_token.outputs.token }}
+
+      - name: Fetch dependencies
+        run: rebar3 get-deps
+
+      - name: Format checks
+        run: make fmt-check
+
+      - name: Build
+        run: make compile
+
+      - name: Eunit checks
+        run: make eunit
+
+      - name: xref checks
+        run: make xref
+
+      - name: Dialyzer checks
+        run: make dialyzer

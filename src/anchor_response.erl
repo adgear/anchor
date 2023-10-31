@@ -1,4 +1,5 @@
 -module(anchor_response).
+
 -include("anchor.hrl").
 
 -compile(inline).
@@ -10,28 +11,23 @@
 
 %% public
 -spec format(response()) -> ok | {ok, term()} | {error, term()}.
-
-format(#response {status = ?STAT_OK} = Response) ->
+format(#response{status = ?STAT_OK} = Response) ->
     return(Response);
-format(#response {status = Status}) ->
+format(#response{status = Status}) ->
     {error, status(Status)}.
 
 %% private
-return(#response {op_code = ?OP_ADD}) -> ok;
-return(#response {op_code = ?OP_DECREMENT, value = Value}) ->
-    {ok, binary:decode_unsigned(Value)};
-return(#response {op_code = ?OP_DELETE}) -> ok;
-return(#response {op_code = ?OP_FLUSH}) -> ok;
-return(#response {op_code = ?OP_GET, value = Value}) ->
-    {ok, Value};
-return(#response {op_code = ?OP_INCREMENT, value = Value}) ->
-    {ok, binary:decode_unsigned(Value)};
-return(#response {op_code = ?OP_NOOP}) -> ok;
-return(#response {op_code = ?OP_QUIT}) -> ok;
-return(#response {op_code = ?OP_REPLACE}) -> ok;
-return(#response {op_code = ?OP_SET}) -> ok;
-return(#response {op_code = ?OP_VERSION, value = Value}) ->
-    {ok, Value}.
+return(#response{op_code = ?OP_ADD}) -> ok;
+return(#response{op_code = ?OP_DECREMENT, value = Value}) -> {ok, binary:decode_unsigned(Value)};
+return(#response{op_code = ?OP_DELETE}) -> ok;
+return(#response{op_code = ?OP_FLUSH}) -> ok;
+return(#response{op_code = ?OP_GET, value = Value}) -> {ok, Value};
+return(#response{op_code = ?OP_INCREMENT, value = Value}) -> {ok, binary:decode_unsigned(Value)};
+return(#response{op_code = ?OP_NOOP}) -> ok;
+return(#response{op_code = ?OP_QUIT}) -> ok;
+return(#response{op_code = ?OP_REPLACE}) -> ok;
+return(#response{op_code = ?OP_SET}) -> ok;
+return(#response{op_code = ?OP_VERSION, value = Value}) -> {ok, Value}.
 
 status(?STAT_AUTH_CONTINUE) -> auth_continue;
 status(?STAT_AUTH_ERROR) -> auth_error;

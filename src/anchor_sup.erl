@@ -1,4 +1,5 @@
 -module(anchor_sup).
+
 -include("anchor.hrl").
 
 -export([
@@ -6,41 +7,59 @@
 ]).
 
 -behaviour(supervisor).
+
 -export([
     init/1
 ]).
 
 %% public
 -spec start_link() -> {ok, pid()}.
-
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% supervisor callbacks
 -spec init([]) -> {ok, {{one_for_one, 5, 10}, []}}.
-
 init([]) ->
-    BacklogSize = ?GET_ENV(backlog_size, ?DEFAULT_BACKLOG_SIZE),
-    Ip = ?GET_ENV(ip, ?DEFAULT_IP),
-    PoolSize = ?GET_ENV(pool_size, ?DEFAULT_POOL_SIZE),
-    PoolStrategy = ?GET_ENV(pool_strategy, ?DEFAULT_POOL_STRATEGY),
-    Port = ?GET_ENV(port, ?DEFAULT_PORT),
-    Reconnect = ?GET_ENV(reconnect, ?DEFAULT_RECONNECT),
-    ReconnectTimeMax = ?GET_ENV(reconnect_time_max, ?DEFAULT_RECONNECT_MAX),
-    ReconnectTimeMin = ?GET_ENV(reconnect_time_min, ?DEFAULT_RECONNECT_MIN),
-    SocketOptions = ?GET_ENV(socket_options, ?DEFAULT_SOCKET_OPTIONS),
+    PoolOptions = default_pool_options(),
+    ClientOptions = default_client_options(),
+    ShackleConfig = ?GET_ENV(shackle, []),
 
-    ok = shackle_pool:start(?APP, ?CLIENT, [
-        {ip, Ip},
-        {port, Port},
-        {reconnect, Reconnect},
-        {reconnect_time_max, ReconnectTimeMax},
-        {reconnect_time_min, ReconnectTimeMin},
-        {socket_options, SocketOptions}
-    ], [
-        {backlog_size, BacklogSize},
-        {pool_size, PoolSize},
-        {pool_strategy, PoolStrategy}
-    ]),
+    PoolConfig = proplists:from_map(
+        maps:merge(
+            maps:from_list(PoolOptions),
+            proplists:to_map(proplists:get_value(pool, ShackleConfig, []))
+        )
+    ),
+    ClientConfig = proplists:from_map(
+        maps:merge(
+            maps:from_list(ClientOptions),
+            proplists:to_map(proplists:get_value(client, ShackleConfig, []))
+        )
+    ),
+
+    ok = shackle_pool:start(
+        ?APP,
+        ?CLIENT,
+        PoolConfig,
+        ClientConfig
+    ),
 
     {ok, {{one_for_one, 5, 10}, []}}.
+
+default_client_options() ->
+    [
+        {ip, ?GET_ENV(ip, ?DEFAULT_IP)},
+        {port, ?GET_ENV(port, ?DEFAULT_PORT)},
+        {reconnect, ?GET_ENV(reconnect, ?DEFAULT_RECONNECT)},
+        {reconnect_time_max, ?GET_ENV(reconnect_time_max, ?DEFAULT_RECONNECT_MAX)},
+        {reconnect_time_min, ?GET_ENV(reconnect_time_min, ?DEFAULT_RECONNECT_MIN)},
+        {socket_options, ?GET_ENV(socket_options, ?DEFAULT_SOCKET_OPTIONS)},
+        {bounce_interval_secs, ?DEFAULT_BOUNCE_INTERVAL}
+].
+
+default_pool_options() ->
+    [
+        {backlog_size, ?GET_ENV(backlog_size, ?DEFAULT_BACKLOG_SIZE)},
+        {pool_size, ?GET_ENV(pool_size, ?DEFAULT_POOL_SIZE)},
+        {pool_strategy, ?GET_ENV(pool_strategy, ?DEFAULT_POOL_STRATEGY)}
+    ].

@@ -1,4 +1,5 @@
 -module(anchor_tests).
+
 -include_lib("anchor/include/anchor.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
@@ -6,10 +7,7 @@
 
 %% runners
 anchor_test_() ->
-    {setup,
-        fun () -> setup() end,
-        fun (_) -> cleanup() end,
-    [
+    {setup, fun() -> setup() end, fun(_) -> cleanup() end, [
         fun async_add_subtest/0,
         fun async_delete_subtest/0,
         fun async_flush_subtest/0,
